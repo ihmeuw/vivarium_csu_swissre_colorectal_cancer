@@ -121,3 +121,30 @@ The ``-v`` flag will log verbosely, so you will get log messages every time
 step. For more ways to run simulations, see the tutorials at
 https://vivarium.readthedocs.io/en/latest/tutorials/running_a_simulation/index.html
 and https://vivarium.readthedocs.io/en/latest/tutorials/exploration.html
+
+
+Development Notes
+-----------------
+
+There was some major annoying stuff about my conda environment, and I
+had to mess around a lot to get a working numpy, numexpr, and tables.
+I had some cruft in .local that made it particularly insidious.
+
+I don't have write access to the standard folders for these projects,
+so I tucked everything in my folder on /share/scratch/users/abie for
+now.
+
+I copied a gig of hdf data from Matt's project to get the artifact to
+build successfully.  Once all the paths, environments, and copies were
+made, I used the command::
+
+    make_artifacts -v --pdb -a
+
+To be able to do that I had to `make_specs -v` first, which required
+me to sort out the environment, but not the paths or copies.
+
+I think I will now be able to actually run a simulation::
+
+    time simulate run src/vivarium_csu_swissre_colorectal_cancer/model_specifications/swissre_coverage.yaml --pdb -v
+
+It worked!

@@ -25,20 +25,20 @@ THROWAWAY_COLUMNS = [f'{state}_event_count' for state in models.STATES]
 
 TOTAL_POPULATION_COLUMN_TEMPLATE = 'total_population_{POP_STATE}'
 PERSON_TIME_COLUMN_TEMPLATE = 'person_time_in_{YEAR}_among_{SEX}_in_age_group_{AGE_GROUP}'
-DEATH_COLUMN_TEMPLATE = 'death_due_to_{CAUSE_OF_DEATH}_in_{YEAR}_among_{SEX}_in_age_group_{AGE_GROUP}'
-YLLS_COLUMN_TEMPLATE = 'ylls_due_to_{CAUSE_OF_DEATH}_in_{YEAR}_among_{SEX}_in_age_group_{AGE_GROUP}'
-YLDS_COLUMN_TEMPLATE = 'ylds_due_to_{CAUSE_OF_DISABILITY}_in_{YEAR}_among_{SEX}_in_age_group_{AGE_GROUP}'
-STATE_PERSON_TIME_COLUMN_TEMPLATE = '{STATE}_person_time_in_{YEAR}_among_{SEX}_in_age_group_{AGE_GROUP}'
-TRANSITION_COUNT_COLUMN_TEMPLATE = '{TRANSITION}_event_count_in_{YEAR}_among_{SEX}_in_age_group_{AGE_GROUP}'
+DEATH_COLUMN_TEMPLATE = 'death_due_to_{CAUSE_OF_DEATH}_in_{YEAR}_among_{SEX}_in_age_cohort_{AGE_COHORT}'
+YLLS_COLUMN_TEMPLATE = 'ylls_due_to_{CAUSE_OF_DEATH}_in_{YEAR}_among_{SEX}_in_age_cohort_{AGE_COHORT}'
+YLDS_COLUMN_TEMPLATE = 'ylds_due_to_{CAUSE_OF_DISABILITY}_in_{YEAR}_among_{SEX}_in_age_cohort_{AGE_COHORT}'
+STATE_PERSON_TIME_COLUMN_TEMPLATE = '{STATE}_person_time_in_{YEAR}_among_{SEX}_in_age_cohort_{AGE_COHORT}'
+TRANSITION_COUNT_COLUMN_TEMPLATE = '{TRANSITION}_event_count_in_{YEAR}_among_{SEX}_in_age_cohort_{AGE_COHORT}'
 
 COLUMN_TEMPLATES = {
     'population': TOTAL_POPULATION_COLUMN_TEMPLATE,
     'person_time': PERSON_TIME_COLUMN_TEMPLATE,
     'deaths': DEATH_COLUMN_TEMPLATE,
     'ylls': YLLS_COLUMN_TEMPLATE,
-    'ylds': YLDS_COLUMN_TEMPLATE,
-    'state_person_time': STATE_PERSON_TIME_COLUMN_TEMPLATE,
-    'transition_count': TRANSITION_COUNT_COLUMN_TEMPLATE,
+    # 'ylds': YLDS_COLUMN_TEMPLATE,
+    # 'state_person_time': STATE_PERSON_TIME_COLUMN_TEMPLATE,
+    # 'transition_count': TRANSITION_COUNT_COLUMN_TEMPLATE,
 }
 
 NON_COUNT_TEMPLATES = [
@@ -46,14 +46,12 @@ NON_COUNT_TEMPLATES = [
 
 POP_STATES = ('living', 'dead', 'tracked', 'untracked')
 SEXES = ('male', 'female')
-# TODO - add literals for years in the model
-YEARS = ()
-# TODO - add literals for ages in the model
-AGE_GROUPS = ()
-# TODO - add causes of death
+YEARS = tuple(range(2020, 2041))
+AGE_COHORTS = tuple(f'{2020 - (x + 5)}_to_{2020 - x}' for x in range(15, 85, 5))
+
 CAUSES_OF_DEATH = (
     'other_causes',
-    # models.FIRST_STATE_NAME,
+    models.CLINICAL_STATE_NAME,
 )
 # TODO - add causes of disability
 CAUSES_OF_DISABILITY = (
@@ -65,7 +63,7 @@ TEMPLATE_FIELD_MAP = {
     'POP_STATE': POP_STATES,
     'YEAR': YEARS,
     'SEX': SEXES,
-    'AGE_GROUP': AGE_GROUPS,
+    'AGE_COHORT': AGE_COHORTS,
     'CAUSE_OF_DEATH': CAUSES_OF_DEATH,
     'CAUSE_OF_DISABILITY': CAUSES_OF_DISABILITY,
     'STATE': models.STATES,
