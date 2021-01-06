@@ -9,6 +9,13 @@ from vivarium_public_health.utilities import TargetString
 
 METADATA_LOCATIONS = 'metadata.locations'
 
+SWISSRE_LOCATION_WEIGHTS = {
+    'Tianjin': 0.18,
+    'Jiangsu': 0.28,
+    'Guangdong': 0.22,
+    'Henan': 0.16,
+    'Heilongjiang': 0.16,
+}
 
 class __Population(NamedTuple):
     STRUCTURE: str = 'population.structure'
@@ -32,16 +39,16 @@ POPULATION = __Population()
 # TODO - sample key group used to identify keys in model
 # For more information see the tutorial:
 # https://vivarium-inputs.readthedocs.io/en/latest/tutorials/pulling_data.html#entity-measure-data
-class __SomeDisease(NamedTuple):
+class __ColorectalCancer(NamedTuple):
 
     # Keys that will be loaded into the artifact. must have a colon type declaration
-    SOME_DISEASE_PREVALENCE: TargetString = TargetString('cause.some_disease.prevalence')
-    SOME_DISEASE_INCIDENCE_RATE: TargetString = TargetString('cause.some_disease.incidence_rate')
-    SOME_DISEASE_REMISSION_RATE: TargetString = TargetString('cause.some_disease.remission_rate')
-    DISABILITY_WEIGHT: TargetString = TargetString('cause.some_disease.disability_weight')
-    EMR: TargetString = TargetString('cause.some_disease.excess_mortality_rate')
-    CSMR: TargetString = TargetString('cause.some_disease.cause_specific_mortality_rate')
-    RESTRICTIONS: TargetString = TargetString('cause.some_disease.restrictions')
+    # CRC_PREVALENCE: TargetString = TargetString('cause.colon_and_rectum_cancer.prevalence')
+    # CRC_INCIDENCE_RATE: TargetString = TargetString('cause.colon_and_rectum_cancer.incidence_rate')
+    # CRC_REMISSION_RATE: TargetString = TargetString('cause.colon_and_rectum_cancer.remission_rate')
+    # DISABILITY_WEIGHT: TargetString = TargetString('cause.colon_and_rectum_cancer.disability_weight')
+    # EMR: TargetString = TargetString('cause.colon_and_rectum_cancer.excess_mortality_rate')
+    # CSMR: TargetString = TargetString('cause.colon_and_rectum_cancer.cause_specific_mortality_rate')
+    # RESTRICTIONS: TargetString = TargetString('cause.colon_and_rectum_cancer.restrictions')
 
     # Useful keys not for the artifact - distinguished by not using the colon type declaration
     RAW_DISEASE_PREVALENCE = TargetString('sequela.raw_disease.prevalence')
@@ -49,17 +56,17 @@ class __SomeDisease(NamedTuple):
 
     @property
     def name(self):
-        return 'some_disease'
+        return 'colon_and_rectum_cancer'
 
     @property
     def log_name(self):
-        return 'some disease'
+        return 'colorectal cancer'
 
 
-SOME_DISEASE = __SomeDisease()
+COLORECTAL_CANCER = __ColorectalCancer()
 
 MAKE_ARTIFACT_KEY_GROUPS = [
     POPULATION,
     # TODO: list all key groups here
-    # SOME_DISEASE
+    COLORECTAL_CANCER
 ]
