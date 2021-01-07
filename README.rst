@@ -147,7 +147,7 @@ I think I will now be able to actually run a simulation::
 
     time simulate run src/vivarium_csu_swissre_colorectal_cancer/model_specifications/swissre_coverage.yaml --pdb -v
 
-It worked!
+It worked!  (Run time ~20 min)
 
 
 Development Notes 2
@@ -182,4 +182,4 @@ After many changes, `make_specs -v` to regenerate model spec, and then::
 and squash bugs until it runs (which I suspect will require rebuilding
 the artifact, but I hope not; I did use `make_artifacts -v --pdb -a`
 before I succeeded, but I'm not sure if it was necessary... I had to
-set the CRC disability weight to 0 to get it to run).
+set the CRC disability weight to 0 to get it to run).  (Run time 17m)

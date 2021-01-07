@@ -57,7 +57,6 @@ def ColorectalCancer():
         models.CLINICAL_STATE,
         get_data_functions={
             'prevalence': lambda *_: 0,
-            'disability_weight': lambda *_: 0,  # TODO: get disability weight to work using data from artifact
             'excess_mortality_rate': load_clinical_emr,
         }
     )
