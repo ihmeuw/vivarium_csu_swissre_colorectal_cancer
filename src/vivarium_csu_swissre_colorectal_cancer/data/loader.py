@@ -16,26 +16,16 @@ import numpy as np, pandas as pd
 from pathlib import Path
 
 from gbd_mapping import causes, covariates, risk_factors
-from vivarium.framework.artifact import EntityKey
+from vivarium.framework.artifact import Artifact, EntityKey
 from vivarium_gbd_access import gbd
 from vivarium_inputs import globals as vi_globals, interface, utilities as vi_utils, utility_data
 from vivarium_inputs.mapping_extension import alternative_risk_factors
 
-from vivarium_csu_swissre_colorectal_cancer import paths
-from vivarium_csu_swissre_colorectal_cancer.constants import data_keys
+from vivarium_csu_swissre_colorectal_cancer import paths, utilities
+from vivarium_csu_swissre_colorectal_cancer.constants import data_keys, data_values, metadata
 
 
-ARTIFACT_INDEX_COLUMNS = [
-    'location',
-    'sex',
-    'age_start',
-    'age_end',
-    'year_start',
-    'year_end'
-]
-
-
-def get_data(lookup_key: str, location: str) -> pd.DataFrame:
+def get_data(lookup_key: str, location: str, artifact: Artifact = None) -> pd.DataFrame:
     """Retrieves data from an appropriate source.
 
     Parameters
@@ -45,6 +35,8 @@ def get_data(lookup_key: str, location: str) -> pd.DataFrame:
         the requested data.
     location
         The location to get data for.
+    artifact
+        An artifact to look in for the data
 
     Returns
     -------
@@ -58,16 +50,20 @@ def get_data(lookup_key: str, location: str) -> pd.DataFrame:
         data_keys.POPULATION.TMRLE: load_theoretical_minimum_risk_life_expectancy,
         data_keys.POPULATION.ACMR: load_acmr,
 
-        # TODO - add appropriate mappings
-        # data_keys.DIARRHEA_PREVALENCE: load_standard_data,
-        # data_keys.DIARRHEA_INCIDENCE_RATE: load_standard_data,
-        # data_keys.DIARRHEA_REMISSION_RATE: load_standard_data,
-        # data_keys.DIARRHEA_CAUSE_SPECIFIC_MORTALITY_RATE: load_standard_data,
-        # data_keys.DIARRHEA_EXCESS_MORTALITY_RATE: load_standard_data,
-        # data_keys.DIARRHEA_DISABILITY_WEIGHT: load_standard_data,
-        # data_keys.DIARRHEA_RESTRICTIONS: load_metadata,
+        data_keys.COLORECTAL_CANCER.RAW_INCIDENCE_RATE: load_raw_incidence_rate,
+        data_keys.COLORECTAL_CANCER.RAW_PREVALENCE: load_raw_prevalence,
+        data_keys.COLORECTAL_CANCER.DISABILITY_WEIGHT: load_disability_weight,
+        data_keys.COLORECTAL_CANCER.CSMR: load_csmr,
+        data_keys.COLORECTAL_CANCER.RESTRICTIONS: load_metadata
     }
-    return mapping[lookup_key](lookup_key, location)
+
+
+    if artifact and lookup_key in artifact:
+        data = artifact.load(lookup_key)
+    else:
+        data = mapping[lookup_key](lookup_key, location)
+
+    return data
 
 
 def load_population_structure(key: str, location: str) -> pd.DataFrame:
@@ -76,7 +72,7 @@ def load_population_structure(key: str, location: str) -> pd.DataFrame:
         return {
             'location': location,
             'sex': sex,
-            'age_start': 0,
+            'age_start': 15,
             'age_end': 95,
             'year_start': year,
             'year_end': year + 1,
@@ -105,7 +101,7 @@ def load_demographic_dimensions(key: str, location: str) -> pd.DataFrame:
         {
             'location': location,
             'sex': 'Male',
-            'age_start': 0,
+            'age_start': 15,
             'age_end': 95,
             'year_start': 2019,
             'year_end': 2020,
@@ -113,7 +109,7 @@ def load_demographic_dimensions(key: str, location: str) -> pd.DataFrame:
         {
             'location': location,
             'sex': 'Female',
-            'age_start': 0,
+            'age_start': 15,
             'age_end': 95,
             'year_start': 2019,
             'year_end': 2020,
@@ -142,7 +138,76 @@ def load_metadata(key: str, location: str):
 
 
 def load_acmr(key: str, location: str) -> pd.DataFrame:
-    return _transform_raw_data(location, paths.RAW_ACMR_DATA_PATH, True)
+    raw_data = pd.read_hdf(paths.RAW_ACMR_DATA_PATH)
+    return _transform_raw_data(location, raw_data, True)
+
+
+def load_csmr(key: str, location: str) -> pd.DataFrame:
+    raw_data = _preprocess_raw_data(paths.RAW_MORTALITY_DATA_PATH)
+    return _transform_raw_data(location, raw_data, False)
+
+
+def load_raw_incidence_rate(key: str, location: str) -> pd.DataFrame:
+    raw_data = _preprocess_raw_data(paths.RAW_INCIDENCE_RATE_DATA_PATH)
+    return _transform_raw_data(location, raw_data, False)
+
+
+def load_raw_prevalence(key: str, location: str) -> pd.DataFrame:
+    raw_data = _preprocess_raw_data(paths.RAW_PREVALENCE_DATA_PATH)
+    return _transform_raw_data(location, raw_data, False)
+
+
+def load_disability_weight(key: str, location: str):
+    """Loads disability weights, weighting by subnational location"""
+    if key == data_keys.COLORECTAL_CANCER.DISABILITY_WEIGHT:
+        location_weighted_disability_weight = 0
+        for swissre_location, location_weight in data_keys.SWISSRE_LOCATION_WEIGHTS.items():
+            prevalence_disability_weight = 0
+            total_sequela_prevalence = 0
+            for sequela in causes.colon_and_rectum_cancer.sequelae:
+                # Get prevalence and disability weight for location and sequela
+                prevalence = interface.get_measure(sequela, 'prevalence', swissre_location)
+                prevalence = prevalence.reset_index()
+                prevalence["location"] = location
+                prevalence = prevalence.set_index(metadata.ARTIFACT_INDEX_COLUMNS)
+                disability_weight = interface.get_measure(sequela, 'disability_weight', swissre_location)
+                disability_weight = disability_weight.reset_index()
+                disability_weight["location"] = location
+                disability_weight = disability_weight.set_index(metadata.ARTIFACT_INDEX_COLUMNS)
+                # Apply prevalence weight
+                prevalence_disability_weight += prevalence * disability_weight
+                total_sequela_prevalence += prevalence
+
+            # Calculate disability weight and apply location weight
+            disability_weight = prevalence_disability_weight / total_sequela_prevalence
+            disability_weight = disability_weight.fillna(0)  # handle NaNs from dividing by 0 prevalence
+            location_weighted_disability_weight += disability_weight * location_weight
+        disability_weight = location_weighted_disability_weight / sum(data_keys.SWISSRE_LOCATION_WEIGHTS.values())
+        return disability_weight
+    else:
+        raise ValueError(f'Unrecognized key {key}')
+
+
+
+# TODO move to lookup table implementation
+def load_emr(key: str, location: str):
+    return get_data(data_keys.COLORECTAL_CANCER.CSMR, location) / get_data(data_keys.COLORECTAL_CANCER.PREVALENCE_CANCER, location)
+
+
+def load_cancer_prevalence(key: str, location: str):
+    prev = get_data(data_keys.COLORECTAL_CANCER.RAW_PREVALENCE, location)
+
+    has_cancer_and_is_screened = data_values.SCREENING_BASELINE * prev
+    has_cancer_and_is_not_screened = (1 - data_values.SCREENING_BASELINE) * prev
+
+    return has_cancer_and_is_screened + has_cancer_and_is_not_screened
+
+
+def load_preclinical_prevalence(key: str, location: str):
+    incidence_pc = get_data(data_keys.COLORECTAL_CANCER.INCIDENCE_RATE_PRECLINICAL, location)
+    mst = utilities.get_normal_random_variable_draws(*data_values.MEAN_SOJOURN_TIME, incidence_pc.columns)
+    return incidence_pc * mst
+
 
 
 def _load_em_from_meid(location, meid, measure):
@@ -161,14 +226,60 @@ def _load_em_from_meid(location, meid, measure):
 # TODO - add project-specific data functions here
 
 # project-specific data functions
-def _transform_raw_data(location: str, data_path: Path, is_log_data: bool) -> pd.DataFrame:
-    processed_data = _transform_raw_data_preliminary(data_path, is_log_data)
+
+def _preprocess_raw_data(data_path: Path) -> pd.DataFrame:
+    if data_path.suffix == '.hdf':
+        raw_data: pd.DataFrame = pd.read_hdf(data_path)
+    elif data_path.suffix == '.csv':
+        raw_data: pd.DataFrame = pd.read_csv(data_path)
+    else:
+        raise ValueError(f'File has unsupported suffix: {data_path.suffix}')
+
+    age_bins = gbd.get_age_bins().set_index('age_group_name')
+    locations = gbd.get_location_ids().set_index('location_name')
+
+    swissre_locations_mask = raw_data['location_id'].isin(data_keys.SWISSRE_LOCATION_WEIGHTS)
+    data = raw_data[swissre_locations_mask]
+
+    data['sex_id'] = data['sex_id'].apply(lambda x: 1 if x == 'Male' else 2)
+
+    data = (
+        data
+            .drop('Unnamed: 0', axis=1)
+            # Set index to match age_bins and join
+            .set_index('age_group_id')
+            .join(age_bins, how='left')
+            .reset_index()
+            # Set index to match location and join
+            .set_index('location_id')
+            .join(locations, how='left')
+            .reset_index()
+            .drop([
+                'level_0',
+                'index',
+                'age_group_years_start',
+                'age_group_years_end'
+            ], axis=1)
+            .set_index([
+                'age_group_id',
+                'draw',
+                'location_id',
+                'sex_id',
+                'year_id'
+            ])
+    )
+    return data
+
+
+def _transform_raw_data(location: str, raw_data: pd.DataFrame, is_log_data: bool) -> pd.DataFrame:
+    processed_data = _transform_raw_data_preliminary(raw_data, is_log_data)
     processed_data['location'] = location
 
     # Weight the covered provinces
-    processed_data['value'] = (sum(processed_data[province] * weight for province, weight
-                                   in data_keys.SWISSRE_LOCATION_WEIGHTS.items())
-                               / sum(data_keys.SWISSRE_LOCATION_WEIGHTS.values()))
+    processed_data['value'] = 0.0
+    for province, weight in data_keys.SWISSRE_LOCATION_WEIGHTS.items():
+        processed_data['value'] = processed_data['value'] + processed_data[province] * weight
+    processed_data['value'] /= sum(data_keys.SWISSRE_LOCATION_WEIGHTS.values())
 
     processed_data = (
         processed_data
@@ -176,19 +287,22 @@ def _transform_raw_data(location: str, data_path: Path, is_log_data: bool) -> pd
             .drop([province for province in data_keys.SWISSRE_LOCATION_WEIGHTS.keys()], axis=1)
             # Set index to final columns and unstack with draws as columns
             .reset_index()
-            .set_index(ARTIFACT_INDEX_COLUMNS + ["draw"])
+            .set_index(metadata.ARTIFACT_INDEX_COLUMNS + ["draw"])
             .unstack()
     )
 
     # Simplify column index and rename draw columns
     processed_data.columns = [c[1] for c in processed_data.columns]
     processed_data = processed_data.rename(columns={col: f'draw_{col}' for col in processed_data.columns})
+
+    # Remove all age groups less than 15 years old
+    processed_data = processed_data.reset_index()
+    processed_data = processed_data[processed_data['age_start'] >= 15].set_index(metadata.ARTIFACT_INDEX_COLUMNS)
     return processed_data
 
 
-def _transform_raw_data_preliminary(data_path: Path, is_log_data: bool = False) -> pd.DataFrame:
+def _transform_raw_data_preliminary(raw_data: pd.DataFrame, is_log_data: bool = False) -> pd.DataFrame:
     """Transforms data to a form with draws in the index and raw locations as columns"""
-    raw_data: pd.DataFrame = pd.read_hdf(data_path)
     age_bins = gbd.get_age_bins().set_index('age_group_id')
     locations = gbd.get_location_ids().set_index('location_id')
 
@@ -208,11 +322,12 @@ def _transform_raw_data_preliminary(data_path: Path, is_log_data: bool = False) 
             .join(locations, how='left')
             .reset_index()
             .rename(columns={
-            'age_group_years_start': 'age_start',
-            'age_group_years_end': 'age_end',
-            'year_id': 'year_start',
-            'location_name': 'location',
-        })
+
+                'age_group_years_start': 'age_start',
+                'age_group_years_end': 'age_end',
+                'year_id': 'year_start',
+                'location_name': 'location',
+            })
     )
 
     # Filter locations down to the regions covered by SwissRE
@@ -221,12 +336,12 @@ def _transform_raw_data_preliminary(data_path: Path, is_log_data: bool = False) 
 
     # Add year end column and create sex column with strings rather than ids
     processed_data['year_end'] = processed_data['year_start'] + 1
-    processed_data['sex'] = processed_data['sex_id'].apply(lambda x: 'Male' if x == 1 else 'Female')
+    processed_data['sex'] = processed_data['sex_id'].map({1: 'Male', 2: 'Female'})
 
     # Drop unneeded columns
-    processed_data = processed_data.drop(
-        ['age_group_id', 'age_group_name', 'location_id', log_value_column, 'sex_id'], axis=1
-    )
+    #processed_data = processed_data.drop(
+    #    ['age_group_id', 'age_group_name', 'location_id', log_value_column, 'sex_id'], axis=1
+    #)
 
     # Make draw column numeric
     processed_data['draw'] = pd.to_numeric(processed_data['draw'])
@@ -234,12 +349,12 @@ def _transform_raw_data_preliminary(data_path: Path, is_log_data: bool = False) 
     # Set index and unstack data with locations as columns
     processed_data = (
         processed_data
-            .set_index(ARTIFACT_INDEX_COLUMNS + ["draw"])
+            .set_index(metadata.ARTIFACT_INDEX_COLUMNS + ["draw"])['value']
             .unstack(level=0)
     )
 
     # Simplify column index and add back location column
-    processed_data.columns = [c[1] for c in processed_data.columns]
+    #processed_data.columns = [c[1] for c in processed_data.columns]
     return processed_data
 
 

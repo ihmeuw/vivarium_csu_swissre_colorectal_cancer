@@ -51,7 +51,7 @@ AGE_COHORTS = tuple(f'{2020 - (x + 5)}_to_{2020 - x}' for x in range(15, 85, 5))
 
 CAUSES_OF_DEATH = (
     'other_causes',
-    models.CLINICAL_STATE_NAME,
+    models.CLINICAL_STATE,
 )
 # TODO - add causes of disability
 CAUSES_OF_DISABILITY = (
