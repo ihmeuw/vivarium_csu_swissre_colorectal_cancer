@@ -42,17 +42,18 @@ POPULATION = __Population()
 class __ColorectalCancer(NamedTuple):
 
     # Keys that will be loaded into the artifact. must have a colon type declaration
-    # CRC_PREVALENCE: TargetString = TargetString('cause.colon_and_rectum_cancer.prevalence')
-    # CRC_INCIDENCE_RATE: TargetString = TargetString('cause.colon_and_rectum_cancer.incidence_rate')
-    # CRC_REMISSION_RATE: TargetString = TargetString('cause.colon_and_rectum_cancer.remission_rate')
-    # DISABILITY_WEIGHT: TargetString = TargetString('cause.colon_and_rectum_cancer.disability_weight')
-    # EMR: TargetString = TargetString('cause.colon_and_rectum_cancer.excess_mortality_rate')
-    # CSMR: TargetString = TargetString('cause.colon_and_rectum_cancer.cause_specific_mortality_rate')
-    # RESTRICTIONS: TargetString = TargetString('cause.colon_and_rectum_cancer.restrictions')
+    RAW_PREVALENCE: TargetString = TargetString('cause.colon_and_rectum_cancer.prevalence')
+    RAW_INCIDENCE_RATE: TargetString = TargetString('cause.colon_and_rectum_cancer.incidence_rate')
+    DISABILITY_WEIGHT: TargetString = TargetString('cause.colon_and_rectum_cancer.disability_weight')
+    CSMR: TargetString = TargetString('cause.colon_and_rectum_cancer.cause_specific_mortality_rate')
+    RESTRICTIONS: TargetString = TargetString('cause.colon_and_rectum_cancer.restrictions')
 
     # Useful keys not for the artifact - distinguished by not using the colon type declaration
-    RAW_DISEASE_PREVALENCE = TargetString('sequela.raw_disease.prevalence')
-    RAW_DISEASE_INCIDENCE_RATE = TargetString('sequela.raw_disease.incidence_rate')
+    EMR = TargetString('cause.colon_and_rectum_cancer.excess_mortality_rate')
+
+    INCIDENCE_RATE_PRECLINICAL = TargetString('sequela.preclinical.incidence_rate')
+    PREVALENCE_PRECLINICAL = TargetString('sequela.preclinical.prevalence')
+    PREVALENCE_CLINICAL = TargetString('cause.colon_and_rectum_cancer.prevalence')
 
     @property
     def name(self):
@@ -67,6 +68,5 @@ COLORECTAL_CANCER = __ColorectalCancer()
 
 MAKE_ARTIFACT_KEY_GROUPS = [
     POPULATION,
-    # TODO: list all key groups here
     COLORECTAL_CANCER
 ]

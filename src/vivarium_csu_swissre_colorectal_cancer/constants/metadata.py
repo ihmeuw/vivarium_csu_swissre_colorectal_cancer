@@ -14,3 +14,12 @@ MAKE_ARTIFACT_SLEEP = 10
 LOCATIONS = [
     'SwissRE Coverage',
 ]
+
+ARTIFACT_INDEX_COLUMNS = [
+    'location',
+    'sex',
+    'age_start',
+    'age_end',
+    'year_start',
+    'year_end'
+]

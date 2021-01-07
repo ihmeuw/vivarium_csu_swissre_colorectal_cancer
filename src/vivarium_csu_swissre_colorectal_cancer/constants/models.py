@@ -6,7 +6,7 @@ class TransitionString(str):
     def __new__(cls, value):
         # noinspection PyArgumentList
         obj = str.__new__(cls, value.lower())
-        obj.from_state, obj.to_state = value.split('_TO_')
+        obj.from_state, obj.to_state = value.split('_TO_')  # HACK: capital letters are intended
         return obj
 
 
@@ -15,20 +15,20 @@ class TransitionString(str):
 ###########################
 
 
-COLORECTAL_CANCER_MODEL_NAME = data_keys.COLORECTAL_CANCER.name
-SUSCEPTIBLE_STATE_NAME = f'susceptible_to_{COLORECTAL_CANCER_MODEL_NAME}'
-PRE_CLINICAL_STATE_NAME = 'pre_clinical_stomach_cancer'
-CLINICAL_STATE_NAME = 'clinical_stomach_cancer'
-RECOVERED_STATE_NAME = f'recovered_from_{COLORECTAL_CANCER_MODEL_NAME}'
-COLORECTAL_CANCER_MODEL_STATES = (SUSCEPTIBLE_STATE_NAME, PRE_CLINICAL_STATE_NAME, CLINICAL_STATE_NAME,
-                               RECOVERED_STATE_NAME)
+COLORECTAL_CANCER = data_keys.COLORECTAL_CANCER.name
+SUSCEPTIBLE_STATE = f'susceptible_to_{COLORECTAL_CANCER}'
+PRECLINICAL_STATE = f'preclinical_{COLORECTAL_CANCER}'
+CLINICAL_STATE = f'{COLORECTAL_CANCER}'
+RECOVERED_STATE = f'recovered_from_{COLORECTAL_CANCER}'
+COLORECTAL_CANCER_MODEL_STATES = (SUSCEPTIBLE_STATE, PRECLINICAL_STATE, CLINICAL_STATE,
+                                  RECOVERED_STATE)
 COLORECTAL_CANCER_MODEL_TRANSITIONS = (
-    TransitionString(f'{SUSCEPTIBLE_STATE_NAME}_TO_{PRE_CLINICAL_STATE_NAME}'),
-    TransitionString(f'{PRE_CLINICAL_STATE_NAME}_TO_{CLINICAL_STATE_NAME}'),
-    TransitionString(f'{CLINICAL_STATE_NAME}_TO_{RECOVERED_STATE_NAME}'),)
+    TransitionString(f'{SUSCEPTIBLE_STATE}_TO_{PRECLINICAL_STATE}'),  # HACK: capital letters in TO are intended
+    TransitionString(f'{PRECLINICAL_STATE}_TO_{CLINICAL_STATE}'),  # HACK: capital letters in TO are intended
+    TransitionString(f'{CLINICAL_STATE}_TO_{RECOVERED_STATE}'),)  # HACK: capital letters in TO are intended
 
 STATE_MACHINE_MAP = {
-    COLORECTAL_CANCER_MODEL_NAME: {
+    COLORECTAL_CANCER: {
         'states': COLORECTAL_CANCER_MODEL_STATES,
         'transitions': COLORECTAL_CANCER_MODEL_TRANSITIONS,
     },

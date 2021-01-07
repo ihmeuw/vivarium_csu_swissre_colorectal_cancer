@@ -1,7 +1,7 @@
 import click
-import pandas as pd
+import numpy as np, pandas as pd
 
-from typing import NamedTuple, Union, List
+from typing import NamedTuple, Union, List, Callable, Dict, Any
 from pathlib import Path
 from loguru import logger
 
@@ -9,6 +9,7 @@ from vivarium_public_health.risks.data_transformations import pivot_categorical
 
 from vivarium_csu_swissre_colorectal_cancer.constants import metadata
 
+from vivarium.framework.randomness import get_hash
 
 def len_longest_location() -> int:
     """Returns the length of the longest location in the project.
@@ -51,6 +52,19 @@ def delete_if_exists(*paths: Union[Path, List[Path]], confirm=False):
         for p in existing_paths:
             logger.info(f'Deleting artifact at {str(p)}.')
             p.unlink()
+
+
+
+
+def get_random_variable_draws(columns: pd.Index, seed: str, distribution: Callable, **distribution_params) -> pd.Series:
+    return pd.Series([get_random_variable(x, seed, distribution, **distribution_params)
+                      for x in range(0, columns.size)], index=columns)
+
+
+
+def get_random_variable(draw: int, seed: str, distribution: Callable, distribution_params: Dict[str, Any]) -> pd.Series:
+    np.random.seed(get_hash(f'{seed}_draw_{draw}'))
+    return distribution(**distribution_params)
 
 
 def read_data_by_draw(artifact_path: str, key : str, draw: int) -> pd.DataFrame:

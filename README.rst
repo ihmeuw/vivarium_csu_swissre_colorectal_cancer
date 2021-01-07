@@ -123,8 +123,8 @@ https://vivarium.readthedocs.io/en/latest/tutorials/running_a_simulation/index.h
 and https://vivarium.readthedocs.io/en/latest/tutorials/exploration.html
 
 
-Development Notes
------------------
+Development Notes 1
+-------------------
 
 There was some major annoying stuff about my conda environment, and I
 had to mess around a lot to get a working numpy, numexpr, and tables.
@@ -148,3 +148,38 @@ I think I will now be able to actually run a simulation::
     time simulate run src/vivarium_csu_swissre_colorectal_cancer/model_specifications/swissre_coverage.yaml --pdb -v
 
 It worked!
+
+
+Development Notes 2
+-------------------
+
+To build out the epi model for Colorectal Cancer, I followed the Lung
+Cancer approach from this commit
+https://github.com/ihmeuw/vivarium_csu_swissre_lung_cancer/commit/9d3eca6e5ac0bfa5da3541c0a4b314992dd5837e
+
+CRC doesn't have an indolent state, so I was able to simplify things a
+little bit, but this all seems more complicated than necessary.
+
+I also found that the paths from the concept model document for the
+forecast data didn't work for me, but I identified some .csv files
+that might be the same as the .nc files I was looking for, and that
+removed a conversion step that I am happy to avoid.  See paths.py for
+details.
+
+I used `make_artifacts -v --pdb -a` repeatedly until I squashed all of
+the bugs I introduced when adapting the code from Lung Cancer. I found
+this process slow, and would prefer any changes that increase the
+speed at which I can iterate through changes in attempts to fix these
+bugs.
+
+Next I will need to build the disease model to use this artifact data.
+I will follow Rajan's approach from this commit when I work on it next
+https://github.com/ihmeuw/vivarium_csu_swissre_lung_cancer/commit/03a764af066882b80896cfee22de87317df0b604
+After many changes, `make_specs -v` to regenerate model spec, and then::
+
+    time simulate run src/vivarium_csu_swissre_colorectal_cancer/model_specifications/swissre_coverage.yaml --pdb -v
+
+and squash bugs until it runs (which I suspect will require rebuilding
+the artifact, but I hope not; I did use `make_artifacts -v --pdb -a`
+before I succeeded, but I'm not sure if it was necessary... I had to
+set the CRC disability weight to 0 to get it to run).
