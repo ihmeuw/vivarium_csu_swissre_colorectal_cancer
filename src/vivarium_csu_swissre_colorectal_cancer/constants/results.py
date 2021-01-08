@@ -13,7 +13,7 @@ TOTAL_YLLS_COLUMN = 'years_of_life_lost'
 # Columns from parallel runs
 INPUT_DRAW_COLUMN = 'input_draw'
 RANDOM_SEED_COLUMN = 'random_seed'
-OUTPUT_SCENARIO_COLUMN = 'screening_algorithm.scenario'
+OUTPUT_SCENARIO_COLUMN = 'branch_name.scenario'
 
 STANDARD_COLUMNS = {
     'total_population': TOTAL_POPULATION_COLUMN,
@@ -28,17 +28,17 @@ PERSON_TIME_COLUMN_TEMPLATE = 'person_time_in_{YEAR}_among_{SEX}_in_age_cohort_{
 DEATH_COLUMN_TEMPLATE = 'death_due_to_{CAUSE_OF_DEATH}_in_{YEAR}_among_{SEX}_in_age_cohort_{AGE_COHORT}'
 YLLS_COLUMN_TEMPLATE = 'ylls_due_to_{CAUSE_OF_DEATH}_in_{YEAR}_among_{SEX}_in_age_cohort_{AGE_COHORT}'
 YLDS_COLUMN_TEMPLATE = 'ylds_due_to_{CAUSE_OF_DISABILITY}_in_{YEAR}_among_{SEX}_in_age_cohort_{AGE_COHORT}'
-STATE_PERSON_TIME_COLUMN_TEMPLATE = '{STATE}_person_time_in_{YEAR}_among_{SEX}_in_age_cohort_{AGE_COHORT}'
-TRANSITION_COUNT_COLUMN_TEMPLATE = '{TRANSITION}_event_count_in_{YEAR}_among_{SEX}_in_age_cohort_{AGE_COHORT}'
+DISEASE_STATE_PERSON_TIME_COLUMN_TEMPLATE = '{STATE}_person_time_in_{YEAR}_among_{SEX}_in_age_cohort_{AGE_COHORT}'
+DISEASE_TRANSITION_COUNT_COLUMN_TEMPLATE = '{TRANSITION}_event_count_in_{YEAR}_among_{SEX}_in_age_cohort_{AGE_COHORT}'
 
 COLUMN_TEMPLATES = {
     'population': TOTAL_POPULATION_COLUMN_TEMPLATE,
     'person_time': PERSON_TIME_COLUMN_TEMPLATE,
     'deaths': DEATH_COLUMN_TEMPLATE,
     'ylls': YLLS_COLUMN_TEMPLATE,
-    # 'ylds': YLDS_COLUMN_TEMPLATE,
-    # 'state_person_time': STATE_PERSON_TIME_COLUMN_TEMPLATE,
-    # 'transition_count': TRANSITION_COUNT_COLUMN_TEMPLATE,
+    'ylds': YLDS_COLUMN_TEMPLATE,
+    'disease_state_person_time': DISEASE_STATE_PERSON_TIME_COLUMN_TEMPLATE,
+    'disease_transition_count': DISEASE_TRANSITION_COUNT_COLUMN_TEMPLATE,
 }
 
 NON_COUNT_TEMPLATES = [
@@ -53,10 +53,8 @@ CAUSES_OF_DEATH = (
     'other_causes',
     models.CLINICAL_STATE,
 )
-# TODO - add causes of disability
 CAUSES_OF_DISABILITY = (
-    # models.FIRST_STATE_NAME,
-    # models.SECOND_STATE_NAME,
+    models.CLINICAL_STATE,
 )
 
 TEMPLATE_FIELD_MAP = {
@@ -71,13 +69,13 @@ TEMPLATE_FIELD_MAP = {
 }
 
 
-def RESULT_COLUMNS(kind='all'):
+def get_result_columns(kind='all'):
     if kind not in COLUMN_TEMPLATES and kind != 'all':
         raise ValueError(f'Unknown result column type {kind}')
     columns = []
     if kind == 'all':
         for k in COLUMN_TEMPLATES:
-            columns += RESULT_COLUMNS(k)
+            columns += get_result_columns(k)
         columns = list(STANDARD_COLUMNS.values()) + columns
     else:
         template = COLUMN_TEMPLATES[kind]

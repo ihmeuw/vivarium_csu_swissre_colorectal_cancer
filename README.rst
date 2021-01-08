@@ -200,4 +200,19 @@ I'm going to do a PR on the code I've added after it finishes testing,
 and then try copying another PR from Rajan
 https://github.com/ihmeuw/vivarium_csu_swissre_lung_cancer/pull/7
 
+That was another pretty straightforward addition, but to test it, I'm
+going to need some results.  It is time to `psimulate` IIUC::
 
+    conda install redis
+    psimulate run src/vivarium_csu_swissre_colorectal_cancer/model_specifications/swissre_coverage.yaml src/vivarium_csu_swissre_colorectal_cancer/model_specifications/branches/scenarios.yaml --pdb -v
+
+psimulate results started coming in after 40 minutes, time to complete
+all was 96 min.  Results written to::
+
+    /share/costeffectiveness/results/swissre_coverage/2021_01_07_16_51_58
+
+And does my result processing code work?  Try this::
+
+    make_results -v --pdb /share/costeffectiveness/results/swissre_coverage/2021_01_07_16_51_58/output.hdf
+
+Well, pretty close.  I bet with a few tweaks it will all work.
