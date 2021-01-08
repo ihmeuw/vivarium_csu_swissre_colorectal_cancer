@@ -183,3 +183,21 @@ and squash bugs until it runs (which I suspect will require rebuilding
 the artifact, but I hope not; I did use `make_artifacts -v --pdb -a`
 before I succeeded, but I'm not sure if it was necessary... I had to
 set the CRC disability weight to 0 to get it to run).  (Run time 17m)
+
+Development Notes 3
+-------------------
+
+Here is a littler pull request that I will copy from the Lung Cancer
+model, to get disease observers
+https://github.com/ihmeuw/vivarium_csu_swissre_lung_cancer/pull/6/
+
+That was pretty straightforward to add, but it seems like a lot of
+duplicated code.  I wonder if there is something that can be
+refactored and put into `vivarium_public_health` to make this even
+simpler.
+
+I'm going to do a PR on the code I've added after it finishes testing,
+and then try copying another PR from Rajan
+https://github.com/ihmeuw/vivarium_csu_swissre_lung_cancer/pull/7
+
+
