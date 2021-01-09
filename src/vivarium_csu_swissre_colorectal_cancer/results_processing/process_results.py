@@ -30,7 +30,6 @@ def make_measure_data(data):
         ylls=get_by_cause_measure_data(data, 'ylls'),
         ylds=get_by_cause_measure_data(data, 'ylds'),
         deaths=get_by_cause_measure_data(data, 'deaths'),
-        # TODO duplicate for each model
         disease_state_person_time=get_state_person_time_measure_data(data, 'disease_state_person_time'),
         disease_transition_count=get_transition_count_measure_data(data, 'disease_transition_count'),
     )
@@ -43,7 +42,6 @@ class MeasureData(NamedTuple):
     ylls: pd.DataFrame
     ylds: pd.DataFrame
     deaths: pd.DataFrame
-    # TODO duplicate for each model
     disease_state_person_time: pd.DataFrame
     disease_transition_count: pd.DataFrame
 
@@ -94,7 +92,7 @@ def filter_out_incomplete(data, keyspace):
 def aggregate_over_seed(data):
     non_count_columns = []
     for non_count_template in results.NON_COUNT_TEMPLATES:
-        non_count_columns += results.RESULT_COLUMNS(non_count_template)
+        non_count_columns += results.get_result_columns(non_count_template)
     count_columns = [c for c in data.columns if c not in non_count_columns + GROUPBY_COLUMNS]
 
     # non_count_data = data[non_count_columns + GROUPBY_COLUMNS].groupby(GROUPBY_COLUMNS).mean()
@@ -122,7 +120,7 @@ def sort_data(data):
 
 def split_processing_column(data):
     # TODO the required splitting here is dependant on what types of stratification exist in the model
-    data['process'], data['age'] = data.process.str.split('_age').str
+    data['process'], data['age'] = data.process.str.split('_age_cohort_').str
     data['process'], data['sex'] = data.process.str.split('_among_').str
     data['year'] = data.process.str.split('_in_').str[-1]
     data['measure'] = data.process.str.split('_in_').str[:-1].apply(lambda x: '_in_'.join(x))
@@ -131,14 +129,14 @@ def split_processing_column(data):
 
 def get_population_data(data):
     total_pop = pivot_data(data[[results.TOTAL_POPULATION_COLUMN]
-                                + results.RESULT_COLUMNS('population')
+                                + results.get_result_columns('population')
                                 + GROUPBY_COLUMNS])
     total_pop = total_pop.rename(columns={'process': 'measure'})
     return sort_data(total_pop)
 
 
 def get_measure_data(data, measure):
-    data = pivot_data(data[results.RESULT_COLUMNS(measure) + GROUPBY_COLUMNS])
+    data = pivot_data(data[results.get_result_columns(measure) + GROUPBY_COLUMNS])
     data = split_processing_column(data)
     return sort_data(data)
 
