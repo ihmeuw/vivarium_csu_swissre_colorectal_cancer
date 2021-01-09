@@ -1,4 +1,5 @@
-
+import math
+import itertools
 import typing
 
 import numpy as np
@@ -125,6 +126,7 @@ def load_preclinical_incidence_rate(cause: str, builder: 'Builder', is_final: bo
 
 
 def load_preclinical_prevalence(cause: str, builder: 'Builder', is_final: bool = True) -> pd.DataFrame:
+    # FIXME: maybe this should be preclinical_incidence * MST
     prev_pc_gp = load_preclinical_general_prevalence(cause, builder)
     prev_c_gp = load_clinical_general_prevalence(cause, builder)
 
@@ -147,9 +149,48 @@ def load_clinical_general_prevalence(cause: str, builder: 'Builder') -> pd.DataF
 
 
 def load_age_shifted_incidence_rate(builder: 'Builder') -> pd.DataFrame:
-    # todo perform actual age shift
-    # i_c426(bin + ceil(mst / binwidth)) * (mst % binwidth) / binwidth + i_c426(bin + floor(mst / binwidth)) * (1 - (mst % binwidth) / binwidth))
+    # incidenc[(bin + ceil(mst / binwidth)) * (mst % binwidth) / binwidth]
     raw_data = load_raw_data(builder, data_keys.COLORECTAL_CANCER.RAW_INCIDENCE_RATE)
     mst = get_random_variable(builder.configuration.input_data.input_draw_number, *data_values.MEAN_SOJOURN_TIME)
 
-    return raw_data
+    bin_width = metadata.ARTIFACT_BIN_WIDTH
+
+    i_ceiling = _shift_incidence_rate(raw_data, math.ceil(mst / bin_width))
+    i_floor = _shift_incidence_rate(raw_data, math.floor(mst / bin_width))
+
+    return (i_ceiling * (mst % bin_width) / bin_width + i_floor * (1 - (mst % bin_width) / bin_width))
+
+
+
+def _shift_incidence_rate(incidence_rate: pd.DataFrame, shift: int, bin_width: int = 5) -> pd.DataFrame:
+    if shift == 0:
+        # No need to do anything if the shift is 0
+        return incidence_rate
+
+    year_shift = shift * bin_width
+
+    incidence_rate = incidence_rate.reset_index()
+    # Shift the values of the age columns by the year shift
+    incidence_rate['age_start'] = incidence_rate['age_start'] - year_shift
+    incidence_rate = incidence_rate.loc[incidence_rate['age_start'] >= 15, :]
+    incidence_rate['age_end'] = incidence_rate['age_end'].apply(
+        lambda x: x - year_shift if x != 125 else 100 - year_shift
+    )
+
+    df = pd.DataFrame(
+        [{'age_start': age * 1.0, 'year_start': year, 'sex': sex} for (age, year, sex) in
+         itertools.product(range(100 - year_shift, 100, bin_width), range(1990, 2041), ['Male', 'Female'])]
+
+    )
+    df['age_end'] = df['age_start'].apply(lambda x: x + bin_width if x != 100 - bin_width else 125)
+    df['year_end'] = df['year_start'] + 1
+
+    df['value'] = df.apply(lambda row: incidence_rate.loc[
+        (incidence_rate['age_end'] == (100.0 - year_shift))
+        & (incidence_rate['year_start'] == row['year_start'])
+        & (incidence_rate['sex'] == row['sex']), 'value'].values[0], axis=1)
+
+    df = df.set_index(metadata.ARTIFACT_INDEX_COLUMNS[1:]).reset_index()
+
+    incidence_rate = pd.concat([incidence_rate, df]).set_index(metadata.ARTIFACT_INDEX_COLUMNS[1:])
+    return incidence_rate

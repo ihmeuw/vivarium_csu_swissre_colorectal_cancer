@@ -216,3 +216,22 @@ And does my result processing code work?  Try this::
     make_results -v --pdb /share/costeffectiveness/results/swissre_coverage/2021_01_07_16_51_58/output.hdf
 
 Well, pretty close.  I bet with a few tweaks it will all work.
+
+
+Development Notes 4
+-------------------
+
+I missed something!  The MST actually needs to be included in
+`load_age_shifted_incidence_rate` for it to shift the age.  The PR
+from the Lung Cancer model that I didn't adapt to this repo does
+that::
+
+    https://github.com/ihmeuw/vivarium_csu_swissre_lung_cancer/pull/5
+
+I'm going to make two changes at the same time while I try to fix
+this, and also use 10x less simulants and 10x more random seeds.  That
+should make better use of the cluster if space is available.  Run time
+for simulate is more than 2 minutes, though (9 minutes, actually).  Maybe I'm on a slow
+machine this time.
+
+Run time for full run with psimulate: 30 minutes
