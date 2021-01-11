@@ -44,12 +44,12 @@ configuration:
         # need to include 95+ age_bin
 
     family_history_or_adenoma:
-        exposure: 0.02
+        exposure: 0.10
 
 
     effect_of_family_history_or_adenoma_on_preclinical_colon_and_rectum_cancer:
         incidence_rate:
-            relative_risk: 2.1
+            relative_risk: 2.3
 #            mean: 0.01
 #            se: 0.001
 
