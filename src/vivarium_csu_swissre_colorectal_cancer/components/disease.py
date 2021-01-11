@@ -114,19 +114,15 @@ def load_clinical_emr(cause: str, builder: 'Builder', is_final: bool = True) -> 
 
 
 def load_preclinical_incidence_rate(cause: str, builder: 'Builder', is_final: bool = True) -> pd.DataFrame:
-    draw = builder.configuration.input_data.input_draw_number
-
-    s_b = data_values.SCREENING_BASELINE
-    mst = get_random_variable(draw, *data_values.MEAN_SOJOURN_TIME)
-    i_star = load_age_shifted_incidence_rate(builder)
+    population_incidence_rate = load_age_shifted_incidence_rate(builder)
     p = load_raw_data(builder, data_keys.COLORECTAL_CANCER.RAW_PREVALENCE)
 
-    incidence_rate = (i_star / (1 - p))
-    return incidence_rate.reset_index() if is_final else incidence_rate
+    susceptible_incidence_rate = (population_incidence_rate / (1 - p))
+    return susceptible_incidence_rate.reset_index() if is_final else susceptible_incidence_rate  # FIXME: what is this if/else block for?
 
 
 def load_preclinical_prevalence(cause: str, builder: 'Builder', is_final: bool = True) -> pd.DataFrame:
-    # FIXME: maybe this should be preclinical_incidence * MST
+    # NOTE: since no one starts in the clinical state, we scale up the prevalence of the preclinical state
     prev_pc_gp = load_preclinical_general_prevalence(cause, builder)
     prev_c_gp = load_clinical_general_prevalence(cause, builder)
 

@@ -235,3 +235,21 @@ for simulate is more than 2 minutes, though (9 minutes, actually).  Maybe I'm on
 machine this time.
 
 Run time for full run with psimulate: 30 minutes
+
+Development Notes 5
+-------------------
+
+Sometimes click doesn't work::
+
+    export LANG=en_US.utf-8
+
+Sometimes psimulate doesn't work, due to a redis port error.  But it works the next time I try.
+
+Links
+-----
+
+https://vivarium-research.readthedocs.io/en/latest/concept_models/vivarium_swissre_colorectalcancer/concept_model.html
+
+https://vivarium-research.readthedocs.io/en/latest/gbd2017_models/causes/neoplasms/colon_and_rectum_cancer/cancer_model.html
+
+
