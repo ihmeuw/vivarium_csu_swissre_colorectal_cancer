@@ -23,3 +23,5 @@ ARTIFACT_INDEX_COLUMNS = [
     'year_start',
     'year_end'
 ]
+
+ARTIFACT_BIN_WIDTH = 5

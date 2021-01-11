@@ -10,7 +10,7 @@ MODEL_SPEC_DIR = BASE_DIR / 'model_specifications'
 RESULTS_ROOT = Path(f'/share/scratch/users/abie/{metadata.PROJECT_NAME}/')
 
 RAW_DATA_ROOT = ARTIFACT_ROOT / 'raw'
-RAW_ACMR_DATA_PATH = RAW_DATA_ROOT / 'all_cause_mortality_rate.hdf'
+RAW_ACMR_DATA_PATH = Path('/ihme/csu/swiss_re/forecast/294_deaths_12_29_ng_smooth_13.csv')
 RAW_INCIDENCE_RATE_DATA_PATH = Path('/ihme/csu/swiss_re/forecast/441_incidence_12_29_ng_smooth_13.csv')
 RAW_MORTALITY_DATA_PATH = Path('/ihme/csu/swiss_re/forecast/441_deaths_12_29_ng_smooth_13.csv')
 RAW_PREVALENCE_DATA_PATH = Path('/ihme/csu/swiss_re/forecast/441_prevalence_12_29_ng_smooth_13.csv')
