@@ -36,6 +36,7 @@ if __name__ == "__main__":
         'vivarium-gbd-access==2.0.4',
         'vivarium_cluster_tools==1.2.1',
         'vivarium_inputs[data]==3.1.1',
+        'pdbpp',
     ]
 
     setup(
