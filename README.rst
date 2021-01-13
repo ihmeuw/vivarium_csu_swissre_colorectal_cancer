@@ -132,7 +132,11 @@ I had some cruft in .local that made it particularly insidious.
 
 I don't have write access to the standard folders for these projects,
 so I tucked everything in my folder on /share/scratch/users/abie for
-now.
+now.  Here is what I might have done::
+
+    pip uninstall numpy numexpr tables
+    conda install numpy=1.15.4 numexpr
+    pip install tables==3.4.0
 
 I copied a gig of hdf data from Matt's project to get the artifact to
 build successfully.  Once all the paths, environments, and copies were
@@ -243,7 +247,16 @@ Sometimes click doesn't work::
 
     export LANG=en_US.utf-8
 
-Sometimes psimulate doesn't work, due to a redis port error.  But it works the next time I try.
+Sometimes psimulate doesn't work, due to a redis port error.  But it
+works the next time I try.
+
+Development Notes 6
+-------------------
+
+At Matt and Rajan's advice, I copied the screening component from the
+cervical cancer model, not the breast cancer model.  It seems a bit
+more complicated, so now I need to strip out the extra parts.  It
+runs, though, and a full run on the cluster completed in 50 minutes.
 
 Links
 -----

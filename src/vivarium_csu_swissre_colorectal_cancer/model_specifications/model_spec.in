@@ -9,9 +9,12 @@ components:
 
     vivarium_csu_swissre_colorectal_cancer.components:
         - ColorectalCancer()
+        - ScreeningAlgorithm()
+
         - MortalityObserver()
         - DisabilityObserver()
         - StateMachineObserver('colon_and_rectum_cancer')
+        - ScreeningObserver()
 #        - LogNormalRiskEffect('risk_factor.family_history_or_adenoma',
 #               'sequela.preclinical_colon_and_rectum_cancer.incidence_rate')
 
