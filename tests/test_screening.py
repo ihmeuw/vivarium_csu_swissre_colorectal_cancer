@@ -1,12 +1,16 @@
+import pytest
 import numpy as np, pandas as pd
 
 from vivarium import InteractiveContext
 from vivarium_csu_swissre_colorectal_cancer.components import screening
 
-sim = InteractiveContext('src/vivarium_csu_swissre_colorectal_cancer/model_specifications/swissre_coverage.yaml')
-sim.step()
+@pytest.fixture(scope="module")
+def sim():
+    sim = InteractiveContext('src/vivarium_csu_swissre_colorectal_cancer/model_specifications/swissre_coverage.yaml')
+    sim.step()
+    return sim
 
-def test_screenings_are_getting_scheduled():
+def test_screenings_are_getting_scheduled(sim):
     pop = sim.get_population()
 #    assert len(pop.screening_result.value_counts().index) == 3, 'expect three screening states: negative, high-risk, and positive'
 # expectations: previous_screening is a date in the past for xxx % of those in the age range
@@ -16,14 +20,14 @@ def test_screenings_are_getting_scheduled():
 # attended previous is true for a percentage of individuals
 
 
-def test_within_screening_age():
+def test_within_screening_age(sim):
     component = sim.get_component('screening_algorithm')
     assert np.allclose(component._within_screening_age(pd.Series([50, 60, 74])),
                        True), 'screening age range is 50-74'
     assert np.allclose(component._within_screening_age(pd.Series([0, 49, 75, 90])),
                        False), 'screening age range is 50-74'
 
-def test_is_symptomatic_presentation():
+def test_is_symptomatic_presentation(sim):
     component = sim.get_component('screening_algorithm')
     pop = pd.DataFrame({'colon_and_rectum_cancer':
                         ['colon_and_rectum_cancer', 'colon_and_rectum_cancer'],
@@ -37,13 +41,13 @@ def test_is_symptomatic_presentation():
                         ['negative_cancer_screen', "at_high_risk_cancer_screen", "positive_colorectal_cancer_screen"]})
     assert np.allclose(component.is_symptomatic_presentation(pop), False)
 
-def test_get_screening_attendance_probability():
+def test_get_screening_attendance_probability(sim):
     component = sim.get_component('screening_algorithm')
     pop = pd.DataFrame(index=range(10), columns=['attended_last_screening'])
     assert np.allclose(component._get_screening_attendance_probability(pop), .25, rtol=.1)
 
 
-def test_schedule_screening():
+def test_schedule_screening(sim):
     component = sim.get_component('screening_algorithm')
     
     n = 10_000
@@ -61,7 +65,7 @@ def test_schedule_screening():
                        5*365, rtol=.35)
 
 
-def test_do_screening():
+def test_do_screening(sim):
     component = sim.get_component('screening_algorithm')
     pop = sim.get_population()
 
