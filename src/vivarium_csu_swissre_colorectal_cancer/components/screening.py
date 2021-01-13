@@ -17,11 +17,6 @@ if typing.TYPE_CHECKING:
 AGE = 'age'
 SEX = 'sex'
 
-def _within_screening_age(age):  # FIXME: decide if this should be a static member function of ScreeningAlgorithm
-    return  ((age >= data_values.FIRST_SCREENING_AGE)
-             & (age <= data_values.LAST_SCREENING_AGE))
-
-
 
 class ScreeningAlgorithm:
     """Manages screening."""
@@ -54,7 +49,9 @@ class ScreeningAlgorithm:
         self.screening_parameters = {parameter.name: parameter.get_random_variable(draw)
                                      for parameter in data_values.SCREENING}
 
-        required_columns = [AGE, models.COLORECTAL_CANCER]
+        self.family_history_or_adenoma = builder.value.get_value('family_history_or_adenoma.exposure')
+
+        required_columns = [AGE, models.COLORECTAL_CANCER,]
         columns_created = [
             models.SCREENING_RESULT_MODEL_NAME,
             data_values.ATTENDED_LAST_SCREENING,
@@ -85,7 +82,7 @@ class ScreeningAlgorithm:
 
         age = pop.loc[:, AGE]
         under_screening_age = age < data_values.FIRST_SCREENING_AGE
-        within_screening_age = _within_screening_age(age)
+        within_screening_age = self._within_screening_age(age)
 
         # Get beginning time for screening of all individuals
         #  - never for simulants over LAST_SCREENING_AGE
@@ -131,7 +128,7 @@ class ScreeningAlgorithm:
 
 
         # Get all simulants who have clinical cancer on this timestep
-        has_symptoms = self.is_symptomatic(pop)
+        has_symptoms = self.is_symptomatic_presentation(pop)
 
         # Set next screening date for simulants who are symptomatic to today
         next_screening_date = pop.loc[:, data_values.NEXT_SCREENING_DATE].copy()
@@ -140,7 +137,7 @@ class ScreeningAlgorithm:
         age = pop.loc[:, AGE]
 
         screening_scheduled = ((next_screening_date <= self.clock())
-                               & _within_screening_age(age))
+                               & self._within_screening_age(age))
 
         # Get probability of attending the next screening for scheduled simulants
         p_attends_screening = self._get_screening_attendance_probability(pop)
@@ -184,10 +181,7 @@ class ScreeningAlgorithm:
         ]
 
         if self.scenario == scenarios.SCENARIOS.baseline:
-            conditional_probabilities = {
-                True: base_first_screening_attendance,
-                False: base_first_screening_attendance,
-            }
+            attended_prob = base_first_screening_attendance
         # else:
         #     if self.clock() < project_globals.RAMP_UP_START:
         #         conditional_probabilities = {
@@ -211,60 +205,114 @@ class ScreeningAlgorithm:
         #         }
 
         # FIXME: simplify this after it is tested
-        return pop.loc[:, data_values.ATTENDED_LAST_SCREENING].map(conditional_probabilities)
+        return pd.Series(attended_prob, index=pop.index)
 
-    def _do_screening(self, pop: pd.Series) -> pd.Series:
-        """Perform screening for all simulants who attended their screening"""
-        screened = _within_screening_age(pop.age)
-        no_cancer = pop.loc[:, models.SCREENING_RESULT_MODEL_NAME].isin([
-            models.SCREENING_NEGATIVE_STATE,
-        ])
+    def _do_screening(self, pop: pd.DataFrame) -> pd.Series:
+        """Perform screening for all simulants who attended their screening
 
-        has_symptoms = self.is_symptomatic(pop)
+        Parameters
+        ----------
+        pop: pd.DataFrame, the population table
 
-        # Get sensitivity values for all individuals
-        cancer_sensitivity = pd.Series(0.0, index=pop.index)
-        cancer_sensitivity.loc[:] = self.screening_parameters[
+        Results
+        -------
+        returns pd.Series of strings indicating the results of the screenings
+
+        """
+        screened_cancer_state = pd.Series(models.SCREENING_NEGATIVE_STATE, index=pop.index)
+
+        ##########################################################
+        # symptomatic presentation always identifies the cancer
+        has_symptoms = self.is_symptomatic_presentation(pop)
+        screened_cancer_state[has_symptoms] = models.SCREENING_POSITIVE_STATE
+
+        ##########################################################
+        # FOBT for individuals who think they are at medium risk
+        has_medium_risk = (pop[models.SCREENING_RESULT_MODEL_NAME] == models.SCREENING_NEGATIVE_STATE) & ~has_symptoms
+
+        results = pd.Series(models.SCREENING_NEGATIVE_STATE, index=pop.index)  # including potential outcomes for simulants who do not get FOBT
+
+        # identify individuals who are actually at high risk
+        high_risk = (self.family_history_or_adenoma(pop.index) == 'cat1')
+        results[high_risk] = models.SCREENING_HIGH_RISK_STATE
+
+        # now identify individuals who screen positive for CRC and get confirmed
+        sensitivity = self.screening_parameters[
             data_values.SCREENING.FOBT_SPECIFICITY.name
         ]
-        cancer_sensitivity.loc[has_symptoms] = self.screening_parameters[
-            data_values.SCREENING.HAS_SYMPTOMS_SENSITIVITY.name
+        screening_positive_results = ((self.randomness.get_draw(pop.index, 'fobt_sensitivity') < sensitivity)  # FIXME: perhaps this sensitivity should be different on different timesteps
+                                      & (pop[models.COLORECTAL_CANCER] != models.SUSCEPTIBLE_STATE))
+        results[screening_positive_results] = models.SCREENING_POSITIVE_STATE
+
+        screened_cancer_state[has_medium_risk] = results[has_medium_risk]
+
+        ##############################################################
+        #  colonoscopy for individuals who think they are at high risk
+        has_high_risk = (pop[models.SCREENING_RESULT_MODEL_NAME] == models.SCREENING_HIGH_RISK_STATE) & ~has_symptoms
+        results = pd.Series(models.SCREENING_HIGH_RISK_STATE, index=pop.index)  # including potential outcomes for simulants who do not get this screening
+        sensitivity = self.screening_parameters[
+            data_values.SCREENING.COLONOSCOPY_SENSITIVITY.name
         ]
+        screening_positive_results = ((self.randomness.get_draw(pop.index, 'colonoscopy_sensitivity') < sensitivity)  # FIXME: perhaps this random draw sholud be different on different time steps
+                                      & (pop[models.COLORECTAL_CANCER] != models.SUSCEPTIBLE_STATE))
+        results[screening_positive_results] = models.SCREENING_POSITIVE_STATE
+        screened_cancer_state[has_high_risk] = results[has_high_risk]
 
-        # Perform screening on those who attended screening
-        accurate_results_cancer = self.randomness.get_draw(pop.index, 'cancer_sensitivity') < cancer_sensitivity
-
-        # Screening results for everyone who was screened
-        # Cancer accurate -> set to model's true state
-        # Cancer inaccurate -> remain at previous screened state
-        # FIXME: get logic right for identifying high-risk groups
-        screened_cancer_state = pd.Series(models.SCREENING_NEGATIVE_STATE, index=pop.index)
-        cancer_status = pop.loc[accurate_results_cancer, models.COLORECTAL_CANCER]
-        screened_cancer_state[accurate_results_cancer] = np.where(cancer_status != models.SUSCEPTIBLE_STATE,
-                                                                  models.SCREENING_POSITIVE_STATE,
-                                                                  screened_cancer_state[accurate_results_cancer])
         return screened_cancer_state
 
     def _schedule_screening(self, previous_screening: pd.Series,
                             screening_result: pd.Series, age: pd.Series) -> pd.Series:
-        """Schedules follow up visits."""
-        annual_screening = (_within_screening_age(age) & (screening_result == models.SCREENING_NEGATIVE_STATE))
-        quinquennial_screening = (screening_result != models.SCREENING_NEGATIVE_STATE)
+
+        """Schedules follow up visits:
+
+        * outside the screening age are low-risk and have no follow up
+        
+        * those in the screening-age, without family history or
+        adenoma are medium-risk and get a FOBT every year
+
+        * those in the screening-age with family history or adenoma
+        are high-risk and get a colonoscopy every five years
+
+        Parameters
+        ----------
+
+        previous_screening: pd.Series of strings, risk group based on last screening
+        screening_result: pd.Series of strings, result of current screening
+        age: pd.Series of floats, age of simulants in years
+
+        Results
+        -------
+
+        returns pd.Series of pd.Timestamps indicating when each
+        individual is next scheduled for a screening (which they might
+        or might not attend)
+
+        """
+        time_to_next_screening = pd.Series(pd.NaT, previous_screening.index)
         draw = self.randomness.get_draw(previous_screening.index, 'schedule_next')
 
-        time_to_next_screening = pd.Series(None, previous_screening.index)
+        annual_screening = (self._within_screening_age(age) & (screening_result == models.SCREENING_NEGATIVE_STATE))
         time_to_next_screening.loc[annual_screening] = pd.to_timedelta(
             pd.Series(data_values.DAYS_UNTIL_NEXT_ANNUAL[1].ppf(  # FIXME: this could be a lot cleaner
                 draw, **data_values.DAYS_UNTIL_NEXT_ANNUAL[2]), index=draw.index), unit='day'
         ).loc[annual_screening]
+
+        quinquennial_screening = (self._within_screening_age(age) & (screening_result == models.SCREENING_HIGH_RISK_STATE))
         time_to_next_screening.loc[quinquennial_screening] = pd.to_timedelta(
             pd.Series(data_values.DAYS_UNTIL_NEXT_QUINQUENNIAL[1].ppf(  # FIXME: this could be a lot cleaner
-                draw, **data_values.DAYS_UNTIL_NEXT_ANNUAL[2]), index=draw.index), unit='day'
+                draw, **data_values.DAYS_UNTIL_NEXT_QUINQUENNIAL[2]), index=draw.index), unit='day'
         ).loc[quinquennial_screening]
 
         return previous_screening + time_to_next_screening.astype('timedelta64[ns]')
 
-    def is_symptomatic(self, pop: pd.DataFrame):
+    def is_symptomatic_presentation(self, pop: pd.DataFrame):
         return ((pop.loc[:, models.COLORECTAL_CANCER].isin([models.CLINICAL_STATE]))
                 & ~(pop.loc[:, models.SCREENING_RESULT_MODEL_NAME].isin([models.SCREENING_POSITIVE_STATE]))
                 )
+
+    # this does not need to be a member function, but it makes testing more uniform
+    def _within_screening_age(self, age: pd.Series):
+        return  ((age >= data_values.FIRST_SCREENING_AGE)
+                 & (age < data_values.LAST_SCREENING_AGE))
+
+

@@ -258,6 +258,10 @@ cervical cancer model, not the breast cancer model.  It seems a bit
 more complicated, so now I need to strip out the extra parts.  It
 runs, though, and a full run on the cluster completed in 50 minutes.
 
+I switched some calls from pandas.Series.apply to pandas.Series.map
+and it might have made a big speed difference.  More likely I just
+landed on a fast node on the cluster today.
+
 Links
 -----
 
