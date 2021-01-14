@@ -262,6 +262,23 @@ I switched some calls from pandas.Series.apply to pandas.Series.map
 and it might have made a big speed difference.  More likely I just
 landed on a fast node on the cluster today.
 
+Development Notes 7
+-------------------
+
+I think I've got all of the screening model in place.  I must say the
+`psimulate` and other tooling is very nice.  I remember how fragile
+the system was before we had data artifacts and psimulate and this is
+quite an improvement.  That said, there are also some practices that I
+think we could really stand to improve on.  Docstrings, automatic
+tests, we need more of these.  I am not a fan of the CAPITAL LETTERS
+in many places in the code, and I find the places where these things
+are defined scattered!  models.py, data_values.py, and model_spec.in
+all contain relevant pieces of the screening model, and I never
+figured out how to guess which one contained which piece.  There seems
+like a lot of opportunity for refactoring to streamline the code.
+
+A full run on a pretty full cluster took 75 minutes.
+
 Links
 -----
 
