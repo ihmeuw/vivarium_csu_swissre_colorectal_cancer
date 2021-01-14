@@ -51,7 +51,9 @@ class ScreeningAlgorithm:
 
         self.family_history_or_adenoma = builder.value.get_value('family_history_or_adenoma.exposure')
 
-        required_columns = [AGE, models.COLORECTAL_CANCER,]
+        required_columns = [AGE, models.COLORECTAL_CANCER,
+            'family_history_or_adenoma_propensity',  # FIXME: shouldn't I be shouting here, too?
+        ]
         columns_created = [
             models.SCREENING_RESULT_MODEL_NAME,
             data_values.ATTENDED_LAST_SCREENING,
@@ -79,6 +81,18 @@ class ScreeningAlgorithm:
         screening_result = pd.Series(models.SCREENING_NEGATIVE_STATE,
                                      index=pop.index,
                                      name=models.SCREENING_RESULT_MODEL_NAME)
+
+
+        attended_previous = pd.Series(self.randomness.get_draw(pop.index, 'attended_previous')
+                                      < self.screening_parameters[data_values.SCREENING.BASE_ATTENDANCE.name],
+                                      name=data_values.ATTENDED_LAST_SCREENING)
+
+        # for those who attended previous screening, determine if they are high-risk
+        high_risk = (self.family_history_or_adenoma(pop.index) == 'cat1')
+        screening_result[attended_previous] = np.where(high_risk,
+                                                       models.SCREENING_HIGH_RISK_STATE,
+                                                       models.SCREENING_NEGATIVE_STATE)
+
 
         age = pop.loc[:, AGE]
         under_screening_age = age < data_values.FIRST_SCREENING_AGE
@@ -108,13 +122,6 @@ class ScreeningAlgorithm:
                                    name=data_values.NEXT_SCREENING_DATE)
         # Remove the "appointment" used to determine the first appointment after turning 21
         previous_screening.loc[under_screening_age] = pd.NaT
-
-        attended_previous = pd.Series(self.randomness.get_draw(pop.index, 'attended_previous')
-                                      < self.screening_parameters[data_values.SCREENING.BASE_ATTENDANCE.name],
-                                      name=data_values.ATTENDED_LAST_SCREENING)
-
-        # TODO: for those who attended previous screening, determine if they are high-risk
-        #
 
         self.population_view.update(
             pd.concat([screening_result, previous_screening, next_screening, attended_previous], axis=1)

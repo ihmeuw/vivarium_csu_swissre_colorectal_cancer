@@ -12,13 +12,33 @@ def sim():
 
 def test_screenings_are_getting_scheduled(sim):
     pop = sim.get_population()
-#    assert len(pop.screening_result.value_counts().index) == 3, 'expect three screening states: negative, high-risk, and positive'
-# expectations: previous_screening is a date in the past for xxx % of those in the age range
+    assert len(pop.screening_result.value_counts().index) == 3, 'expect three screening states: negative, high-risk, and positive'
 
-# next screening is a date in the future; aroud 1 year for some and 5 years for others based on risk group
+def test_previous_screenings_initialized_to_happen_before_sim(sim):
+    pop = sim.get_population()
+    component = sim.get_component('screening_algorithm')
+    time_since_previous_screening = ((component.clock() - pop.previous_screening_date)
+                                     / pd.Timedelta(days=1))
+    medium_risk = (pop.screening_result == 'negative_cancer_screen')
+    assert 365/2 <= np.mean(time_since_previous_screening[medium_risk]) <= 365, 'medium-risk population seen in the last year'
 
-# attended previous is true for a percentage of individuals
+    high_risk = (pop.screening_result == 'at_high_risk_cancer_screen')
+    assert 5*365/2 <= np.mean(time_since_previous_screening[high_risk]) <= 5*365, 'high-risk population seen in last five years'
 
+def test_next_screenings_initialized_to_happen_before_sim(sim):
+    pop = sim.get_population()
+    component = sim.get_component('screening_algorithm')
+    time_to_next_screening = ((pop.next_screening_date - component.clock())
+                                     / pd.Timedelta(days=1))
+    medium_risk = (pop.screening_result == 'negative_cancer_screen')
+    assert 365/2 <= np.mean(time_to_next_screening[medium_risk]) <= 365, 'medium-risk population scheduled in the last year'
+
+    high_risk = (pop.screening_result == 'at_high_risk_cancer_screen')
+    assert 5*365/3 <= np.mean(time_to_next_screening[high_risk]) <= 5*365, 'high-risk population scheduled in last five years'
+
+def test_initialization_of_attended_last_screening(sim):
+    pop = sim.get_population()
+    assert np.allclose(np.mean(pop.attended_last_screening), .25, rtol=.05), 'initialized to have proportion who have attended their last scheduled screening'
 
 def test_within_screening_age(sim):
     component = sim.get_component('screening_algorithm')
@@ -64,7 +84,6 @@ def test_schedule_screening(sim):
     assert np.allclose(np.mean((next_screening - previous_screening) / pd.Timedelta(days=1)),
                        5*365, rtol=.35)
 
-
 def test_do_screening(sim):
     component = sim.get_component('screening_algorithm')
     pop = sim.get_population()
@@ -88,6 +107,12 @@ def test_do_screening(sim):
 
     assert screened_cancer_state.nunique() == 3
 
-
+@pytest.mark.skip
+def test_high_risk_detection_rate():
     # TODO: confirm that high risk is being detected at the rate expected
+    pass
+
+@pytest.mark.skip
+def test_sensitivities():
     # TODO: confirm that the sensitivities are are intended
+    pass
