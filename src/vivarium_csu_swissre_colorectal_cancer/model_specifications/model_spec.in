@@ -14,6 +14,7 @@ components:
         - MortalityObserver()
         - DisabilityObserver()
         - StateMachineObserver('colon_and_rectum_cancer')
+        - StateMachineObserver('screening_result', 'False')
         - ScreeningObserver()
 #        - LogNormalRiskEffect('risk_factor.family_history_or_adenoma',
 #               'sequela.preclinical_colon_and_rectum_cancer.incidence_rate')
@@ -66,6 +67,10 @@ configuration:
             by_sex: True
             by_year: True
         colon_and_rectum_cancer:
+            by_age: False
+            by_sex: True
+            by_year: True
+        screening_result:
             by_age: False
             by_sex: True
             by_year: True
