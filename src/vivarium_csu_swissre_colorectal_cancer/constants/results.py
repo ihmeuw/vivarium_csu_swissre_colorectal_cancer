@@ -1,6 +1,6 @@
 import itertools
 
-from vivarium_csu_swissre_colorectal_cancer.constants import models
+from . import models
 
 #################################
 # Results columns and variables #
@@ -9,6 +9,9 @@ from vivarium_csu_swissre_colorectal_cancer.constants import models
 TOTAL_POPULATION_COLUMN = 'total_population'
 TOTAL_YLDS_COLUMN = 'years_lived_with_disability'
 TOTAL_YLLS_COLUMN = 'years_of_life_lost'
+
+SCREENING_SCHEDULED = 'screening_scheduled_count'
+SCREENING_ATTENDED = 'screening_attended_count'
 
 # Columns from parallel runs
 INPUT_DRAW_COLUMN = 'input_draw'

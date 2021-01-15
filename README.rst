@@ -132,7 +132,11 @@ I had some cruft in .local that made it particularly insidious.
 
 I don't have write access to the standard folders for these projects,
 so I tucked everything in my folder on /share/scratch/users/abie for
-now.
+now.  Here is what I might have done::
+
+    pip uninstall numpy numexpr tables
+    conda install numpy=1.15.4 numexpr
+    pip install tables==3.4.0
 
 I copied a gig of hdf data from Matt's project to get the artifact to
 build successfully.  Once all the paths, environments, and copies were
@@ -243,7 +247,37 @@ Sometimes click doesn't work::
 
     export LANG=en_US.utf-8
 
-Sometimes psimulate doesn't work, due to a redis port error.  But it works the next time I try.
+Sometimes psimulate doesn't work, due to a redis port error.  But it
+works the next time I try.
+
+Development Notes 6
+-------------------
+
+At Matt and Rajan's advice, I copied the screening component from the
+cervical cancer model, not the breast cancer model.  It seems a bit
+more complicated, so now I need to strip out the extra parts.  It
+runs, though, and a full run on the cluster completed in 50 minutes.
+
+I switched some calls from pandas.Series.apply to pandas.Series.map
+and it might have made a big speed difference.  More likely I just
+landed on a fast node on the cluster today.
+
+Development Notes 7
+-------------------
+
+I think I've got all of the screening model in place.  I must say the
+`psimulate` and other tooling is very nice.  I remember how fragile
+the system was before we had data artifacts and psimulate and this is
+quite an improvement.  That said, there are also some practices that I
+think we could really stand to improve on.  Docstrings, automatic
+tests, we need more of these.  I am not a fan of the CAPITAL LETTERS
+in many places in the code, and I find the places where these things
+are defined scattered!  models.py, data_values.py, and model_spec.in
+all contain relevant pieces of the screening model, and I never
+figured out how to guess which one contained which piece.  There seems
+like a lot of opportunity for refactoring to streamline the code.
+
+A full run on a pretty full cluster took 75 minutes.
 
 Links
 -----
