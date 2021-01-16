@@ -51,6 +51,11 @@ class ScreeningAlgorithm:
 
         self.family_history_or_adenoma = builder.value.get_value('family_history_or_adenoma.exposure')
 
+        self.probability_attending_screening = builder.value.register_value_producer(
+            data_values.PROBABILITY_ATTENDING_SCREENING_KEY,
+            source=self.get_screening_attendance_probability,
+            requires_columns=[data_values.ATTENDED_LAST_SCREENING])
+
         required_columns = [AGE, models.COLORECTAL_CANCER,
             'family_history_or_adenoma_propensity',  # FIXME: shouldn't I be shouting here, too?
         ]
@@ -147,7 +152,7 @@ class ScreeningAlgorithm:
                                & self._within_screening_age(age))
 
         # Get probability of attending the next screening for scheduled simulants
-        p_attends_screening = self._get_screening_attendance_probability(pop)
+        p_attends_screening = self.probability_attending_screening(pop.index)
 
         # Get all simulants who actually attended their screening
         attends_screening: pd.Series = (
@@ -182,37 +187,8 @@ class ScreeningAlgorithm:
         )
 
 
-    def _get_screening_attendance_probability(self, pop: pd.DataFrame) -> pd.Series:
-        base_first_screening_attendance = self.screening_parameters[
-            data_values.SCREENING.BASE_ATTENDANCE.name
-        ]
-
-        if self.scenario == scenarios.SCENARIOS.baseline:
-            attended_prob = base_first_screening_attendance
-        # else:
-        #     if self.clock() < project_globals.RAMP_UP_START:
-        #         conditional_probabilities = {
-        #             True: screening_start_attended_previous,
-        #             False: screening_start_not_attended_previous,
-        #         }
-        #     elif self.clock() < project_globals.RAMP_UP_END:
-        #         elapsed_time = self.clock() - project_globals.RAMP_UP_START
-        #         progress_to_ramp_up_end = elapsed_time / (project_globals.RAMP_UP_END - project_globals.RAMP_UP_START)
-        #         attended_prev_ramp_up = screening_end_attended_previous - screening_start_attended_previous
-        #         not_attended_prev_ramp_up = screening_end_not_attended_previous - screening_start_not_attended_previous
-        #
-        #         conditional_probabilities = {
-        #             True: attended_prev_ramp_up * progress_to_ramp_up_end + screening_start_attended_previous,
-        #             False: not_attended_prev_ramp_up * progress_to_ramp_up_end + screening_start_not_attended_previous,
-        #         }
-        #     else:
-        #         conditional_probabilities = {
-        #             True: screening_end_attended_previous,
-        #             False: screening_end_not_attended_previous,
-        #         }
-
-        # FIXME: simplify this after it is tested
-        return pd.Series(attended_prob, index=pop.index)
+    def get_screening_attendance_probability(self, idx):
+        return data_values.SCREENING_BASELINE
 
     def _do_screening(self, pop: pd.DataFrame) -> pd.Series:
         """Perform screening for all simulants who attended their screening

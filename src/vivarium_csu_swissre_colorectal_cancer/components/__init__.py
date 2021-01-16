@@ -5,3 +5,4 @@ from .observers import (DisabilityObserver,
                         ScreeningObserver,)
 from .risk_effect import LogNormalRiskEffect
 from .screening import ScreeningAlgorithm
+from .intervention import ScreeningScaleUp

@@ -2,7 +2,6 @@ import pytest
 import numpy as np, pandas as pd
 
 from vivarium import InteractiveContext
-from vivarium_csu_swissre_colorectal_cancer.components import screening
 
 @pytest.fixture(scope="module")
 def sim():
@@ -64,7 +63,7 @@ def test_is_symptomatic_presentation(sim):
 def test_get_screening_attendance_probability(sim):
     component = sim.get_component('screening_algorithm')
     pop = pd.DataFrame(index=range(10), columns=['attended_last_screening'])
-    assert np.allclose(component._get_screening_attendance_probability(pop), .25, rtol=.1)
+    assert np.allclose(component.probability_attending_screening(pop.index), .2, rtol=.001)
 
 
 def test_schedule_screening(sim):

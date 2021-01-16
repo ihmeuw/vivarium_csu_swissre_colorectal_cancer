@@ -10,6 +10,7 @@ components:
     vivarium_csu_swissre_colorectal_cancer.components:
         - ColorectalCancer()
         - ScreeningAlgorithm()
+        - ScreeningScaleUp()
 
         - MortalityObserver()
         - DisabilityObserver()
@@ -56,6 +57,9 @@ configuration:
             relative_risk: 2.3
 #            mean: 0.01
 #            se: 0.001
+
+    screening_algorithm:
+        scenario: 'alternative'
 
     metrics:
         disability:

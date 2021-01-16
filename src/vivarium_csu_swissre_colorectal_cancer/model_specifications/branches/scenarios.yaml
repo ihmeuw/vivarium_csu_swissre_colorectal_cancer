@@ -3,4 +3,4 @@ random_seed_count: 400
 
 branches:
   - branch_name:
-      scenario: ['baseline']
+      scenario: ['baseline', 'alternative']

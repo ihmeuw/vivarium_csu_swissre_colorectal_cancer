@@ -277,7 +277,25 @@ all contain relevant pieces of the screening model, and I never
 figured out how to guess which one contained which piece.  There seems
 like a lot of opportunity for refactoring to streamline the code.
 
-A full run on a pretty full cluster took 75 minutes.
+A full run on a pretty full cluster took 75 minutes.  On a pretty empty cluster: 42
+
+Try again with 40 seeds and 200k simulants: Elapsed time: 185.4 minutes.  
+
+To see how busy the cluster is: `/ihme/geospatial/tools/bin/qfree`
+
+Development Notes 8
+-------------------
+
+To add the scenario where screening scales up from the baseline level,
+I've followed the final code from the cervical cancer model, and not
+tried to work with a single PR.  It seems like there was some
+refactoring that would making tracing through the PRs more trouble for
+this feature. On the other hand, I might have missed some other
+refactoring that my model would also benefit from.  Maybe Matt and
+Rajan can call my attention to things they remember improving in their
+model after they got the baseline screening component in place.  It
+all seems to work, though, and I'm going to launch a large run because
+the IHME cluster is pretty empty right now.
 
 Links
 -----
