@@ -2,5 +2,5 @@ input_draw_count: 10
 random_seed_count: 400
 
 branches:
-  - branch_name:
+  - screening_algorithm:
       scenario: ['baseline', 'alternative']
