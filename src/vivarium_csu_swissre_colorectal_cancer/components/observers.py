@@ -393,7 +393,11 @@ class ScreeningObserver:
 def get_state_person_time(pop: pd.DataFrame, config: Dict[str, bool],
                           state_machine: str, state: str, current_year: Union[str, int],
                           step_size: pd.Timedelta, age_bins: pd.DataFrame) -> Dict[str, float]:
-    """Custom person time getter that handles state column name assumptions"""
+    """Custom person time getter that handles state column name assumptions
+
+    TODO: this function takes 20% of the total run time, see if it is
+    possible to speed it up or use it less
+    """
     base_key = get_output_template(**config).substitute(measure=f'{state}_person_time',
                                                         year=current_year)
     base_filter = QueryString(f'alive == "alive" and {state_machine} == "{state}"')

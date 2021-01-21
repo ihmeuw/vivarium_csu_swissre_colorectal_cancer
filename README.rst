@@ -297,6 +297,19 @@ model after they got the baseline screening component in place.  It
 all seems to work, though, and I'm going to launch a large run because
 the IHME cluster is pretty empty right now.
 
+Can it go faster?  Here is a recipe for profiling the simulation::
+
+    simulate profile src/vivarium_csu_swissre_colorectal_cancer/model_specifications/swissre_coverage.yaml --process
+
+It put results in a hard-to-find file, `/ihme/homes/abie/vivarium_results/swissre_coverage.stats`.
+
+Might everything be 5 minutes faster if I exclude the
+DisabilityObserver?  32 minutes for a full run on the cluster.
+Compared to reliably taking 45 minutes with the observer included.  A
+30% speedup is awesome, but also doesn't make a difference in my
+workflow.  Decision: Leave observer in and don't need to make changes
+to the brittle results processing code.
+
 Links
 -----
 

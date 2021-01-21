@@ -115,7 +115,7 @@ class ScreeningAlgorithm:
         )
 
         # Draw a duration between screenings to use for scheduling the first screening
-        time_between_screenings = self._schedule_screening(screening_start, screening_result, age) - screening_start
+        time_between_screenings = self._schedule_screening(screening_start, screening_result) - screening_start
 
         # Determine how far along between screenings we are the time screening starts
         progress_to_next_screening = self.randomness.get_draw(pop.index, 'progress_to_next_screening')
@@ -148,8 +148,8 @@ class ScreeningAlgorithm:
 
         age = pop.loc[:, AGE]
 
-        screening_scheduled = ((next_screening_date <= self.clock())
-                               & self._within_screening_age(age))
+        screening_scheduled = has_symptoms | ((next_screening_date <= self.clock())
+                                              & self._within_screening_age(age))
 
         # Get probability of attending the next screening for scheduled simulants
         p_attends_screening = self.probability_attending_screening(pop.index)
@@ -177,8 +177,7 @@ class ScreeningAlgorithm:
         next_screening = pop.loc[:, data_values.NEXT_SCREENING_DATE].copy()
         next_screening.loc[screening_scheduled] = self._schedule_screening(
             pop.loc[screening_scheduled, data_values.NEXT_SCREENING_DATE],
-            screening_result.loc[screening_scheduled],
-            age
+            screening_result.loc[screening_scheduled]
         )
 
         # Update values
@@ -244,24 +243,20 @@ class ScreeningAlgorithm:
         return screened_cancer_state
 
     def _schedule_screening(self, previous_screening: pd.Series,
-                            screening_result: pd.Series, age: pd.Series) -> pd.Series:
-
+                            screening_result: pd.Series) -> pd.Series:
         """Schedules follow up visits:
+ 
+        * without family history or adenoma are medium-risk and get a
+        FOBT every year
 
-        * outside the screening age are low-risk and have no follow up
-        
-        * those in the screening-age, without family history or
-        adenoma are medium-risk and get a FOBT every year
-
-        * those in the screening-age with family history or adenoma
-        are high-risk and get a colonoscopy every five years
+        * with family history or adenoma are high-risk and get a
+        colonoscopy every five years
 
         Parameters
         ----------
 
         previous_screening: pd.Series of strings, risk group based on last screening
         screening_result: pd.Series of strings, result of current screening
-        age: pd.Series of floats, age of simulants in years
 
         Results
         -------
@@ -274,13 +269,13 @@ class ScreeningAlgorithm:
         time_to_next_screening = pd.Series(pd.NaT, previous_screening.index)
         draw = self.randomness.get_draw(previous_screening.index, 'schedule_next')
 
-        annual_screening = (self._within_screening_age(age) & (screening_result == models.SCREENING_NEGATIVE_STATE))
+        annual_screening = (screening_result == models.SCREENING_NEGATIVE_STATE)
         time_to_next_screening.loc[annual_screening] = pd.to_timedelta(
             pd.Series(data_values.DAYS_UNTIL_NEXT_ANNUAL[1].ppf(  # FIXME: this could be a lot cleaner
                 draw, **data_values.DAYS_UNTIL_NEXT_ANNUAL[2]), index=draw.index), unit='day'
         ).loc[annual_screening]
 
-        quinquennial_screening = (self._within_screening_age(age) & (screening_result == models.SCREENING_HIGH_RISK_STATE))
+        quinquennial_screening = (screening_result == models.SCREENING_HIGH_RISK_STATE)
         time_to_next_screening.loc[quinquennial_screening] = pd.to_timedelta(
             pd.Series(data_values.DAYS_UNTIL_NEXT_QUINQUENNIAL[1].ppf(  # FIXME: this could be a lot cleaner
                 draw, **data_values.DAYS_UNTIL_NEXT_QUINQUENNIAL[2]), index=draw.index), unit='day'
