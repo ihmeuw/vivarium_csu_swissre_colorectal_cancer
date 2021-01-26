@@ -220,7 +220,7 @@ class ScreeningAlgorithm:
 
         # now identify individuals who screen positive for CRC and get confirmed
         sensitivity = self.screening_parameters[
-            data_values.SCREENING.FOBT_SPECIFICITY.name
+            data_values.SCREENING.FOBT_SENSITIVITY.name
         ]
         screening_positive_results = ((self.randomness.get_draw(pop.index, 'fobt_sensitivity') < sensitivity)  # FIXME: perhaps this sensitivity should be different on different timesteps
                                       & (pop[models.COLORECTAL_CANCER] != models.SUSCEPTIBLE_STATE))

@@ -22,7 +22,7 @@ DAYS_UNTIL_NEXT_QUINQUENNIAL = ('days_until_next_quinquennial', stats.lognorm, {
 
 
 PROBABILITY_ATTENDING_SCREENING_KEY = 'probability_attending_screening'
-PROBABILITY_ATTENDING_FIRST_SCREENING_MEAN = 0.25  # FIXME: what number should I use for this?
+PROBABILITY_ATTENDING_FIRST_SCREENING_MEAN = 0.15
 PROBABILITY_ATTENDING_FIRST_SCREENING_STDDEV = 0.0025
 # 1.89 with 95%CI 1.06-2.49 (Yan et al. 2017)
 # stddev = (2.49-1.06)/4 = .35750000000000000000
@@ -51,10 +51,10 @@ LAST_SCREENING_AGE = 75
 
 
 class __Screening(NamedTuple):
-    FOBT_SENSITIVITY: TruncnormDist = TruncnormDist('fobt_sensitivity', 0.68, 0.05)  # FIXME: get better parameters for this
-    FOBT_SPECIFICITY: TruncnormDist = TruncnormDist('fobt_specificity', 0.88, 0.02)
+    FOBT_SENSITIVITY: TruncnormDist = TruncnormDist('fobt_sensitivity', 0.68, 0.056)
+    FOBT_SPECIFICITY: TruncnormDist = TruncnormDist('fobt_specificity', 0.88, 0.018)
 
-    COLONOSCOPY_SENSITIVITY: TruncnormDist = TruncnormDist('colonoscopy_sensitivity', 0.98, 0.03)  # FIXME: get better parameters for this
+    COLONOSCOPY_SENSITIVITY: TruncnormDist = TruncnormDist('colonoscopy_sensitivity', 0.98, 0.04)
     COLONOSCOPY_SPECIFICITY: TruncnormDist = TruncnormDist('colonoscopy_specificity', 1.0, 0.0)
 
     HAS_SYMPTOMS_SENSITIVITY: TruncnormDist = TruncnormDist('has_symptoms_sensitivity', 1.0, 0.0)
@@ -80,7 +80,7 @@ SCREENING = __Screening()
 ###################################
 SCALE_UP_START_DT = datetime(2021, 1, 1)
 SCALE_UP_END_DT = datetime(2030, 1, 1)
-SCREENING_BASELINE = 0.20
+SCREENING_BASELINE = 0.15
 SCREENING_SCALE_UP_GOAL_COVERAGE = 0.60
 SCREENING_SCALE_UP_DIFFERENCE = SCREENING_SCALE_UP_GOAL_COVERAGE - SCREENING_BASELINE
 

@@ -5,7 +5,6 @@ components:
             - Mortality()
         risks:
             - Risk('risk_factor.family_history_or_adenoma')
-            - RiskEffect('risk_factor.family_history_or_adenoma', 'sequela.preclinical_colon_and_rectum_cancer.incidence_rate')
 
     vivarium_csu_swissre_colorectal_cancer.components:
         - ColorectalCancer()
@@ -17,8 +16,8 @@ components:
         - StateMachineObserver('colon_and_rectum_cancer')
         - StateMachineObserver('screening_result', 'False')
         - ScreeningObserver()
-#        - LogNormalRiskEffect('risk_factor.family_history_or_adenoma',
-#               'sequela.preclinical_colon_and_rectum_cancer.incidence_rate')
+        - LogNormalRiskEffect('risk_factor.family_history_or_adenoma',
+               'sequela.preclinical_colon_and_rectum_cancer.incidence_rate')
 
 configuration:
     input_data:
@@ -49,14 +48,12 @@ configuration:
         # need to include 95+ age_bin
 
     family_history_or_adenoma:
-        exposure: 0.10
-
+        exposure: 0.05
 
     effect_of_family_history_or_adenoma_on_preclinical_colon_and_rectum_cancer:
         incidence_rate:
-            relative_risk: 2.3
-#            mean: 0.01
-#            se: 0.001
+            mean: 0.38 # = log(2.4)
+            se: 0.21
 
     screening_algorithm:
         scenario: 'alternative'
