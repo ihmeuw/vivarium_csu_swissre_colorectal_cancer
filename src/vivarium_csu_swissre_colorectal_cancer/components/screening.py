@@ -74,7 +74,6 @@ class ScreeningAlgorithm:
         builder.event.register_listener('time_step',
                                         self.on_time_step)
 
-
     def on_initialize_simulants(self, pop_data: 'SimulantData'):
         """Assign all simulants a next screening date. Also determine if they attended their previous screening,
         and if they did, assume that they know about their high-risk/medium-risk status."""
@@ -185,7 +184,6 @@ class ScreeningAlgorithm:
             pd.concat([screening_result, previous_screening, next_screening, attended_last_screening], axis=1)
         )
 
-
     def get_screening_attendance_probability(self, idx):
         return data_values.SCREENING_BASELINE
 
@@ -223,8 +221,14 @@ class ScreeningAlgorithm:
             data_values.SCREENING.FOBT_SENSITIVITY.name
         ]
         screening_positive_results = ((self.randomness.get_draw(pop.index, 'fobt_sensitivity') < sensitivity)  # FIXME: perhaps this sensitivity should be different on different timesteps
-                                      & (pop[models.COLORECTAL_CANCER] != models.SUSCEPTIBLE_STATE))
-        results[screening_positive_results] = models.SCREENING_POSITIVE_STATE
+                                      & (self.randomness.get_draw(pop.index, 'colonoscopy_sensitivity') < sensitivity))
+
+        actually_preclinical = pop[models.COLORECTAL_CANCER] == models.PRECLINICAL_STATE
+        actually_positive_or_recovered = pop[models.COLORECTAL_CANCER].isin([models.CLINICAL_STATE,
+                                                                             models.RECOVERED_STATE])
+
+        results[screening_positive_results & actually_preclinical] = models.SCREENING_PRECLINICAL_STATE
+        results[screening_positive_results & actually_positive_or_recovered] = models.SCREENING_POSITIVE_STATE
 
         screened_cancer_state[has_medium_risk] = results[has_medium_risk]
 
@@ -235,9 +239,14 @@ class ScreeningAlgorithm:
         sensitivity = self.screening_parameters[
             data_values.SCREENING.COLONOSCOPY_SENSITIVITY.name
         ]
-        screening_positive_results = ((self.randomness.get_draw(pop.index, 'colonoscopy_sensitivity') < sensitivity)  # FIXME: perhaps this random draw sholud be different on different time steps
-                                      & (pop[models.COLORECTAL_CANCER] != models.SUSCEPTIBLE_STATE))
-        results[screening_positive_results] = models.SCREENING_POSITIVE_STATE
+        screening_positive_results = self.randomness.get_draw(pop.index, 'colonoscopy_sensitivity') < sensitivity  # FIXME: perhaps this random draw sholud be different on different time steps
+
+        actually_preclinical = pop[models.COLORECTAL_CANCER] == models.PRECLINICAL_STATE
+        actually_positive_or_recovered = pop[models.COLORECTAL_CANCER].isin([models.CLINICAL_STATE,
+                                                                             models.RECOVERED_STATE])
+
+        results[screening_positive_results & actually_preclinical] = models.SCREENING_PRECLINICAL_STATE
+        results[screening_positive_results & actually_positive_or_recovered] = models.SCREENING_POSITIVE_STATE
         screened_cancer_state[has_high_risk] = results[has_high_risk]
 
         return screened_cancer_state
